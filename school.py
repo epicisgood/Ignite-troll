@@ -31,7 +31,7 @@ class Interstellar_buttons(discord.ui.View):
     elif interaction.user.id == 869697201100714074: #Mr.Storm
       await interaction.response.send_message(content="https://rocky-mountains.onrender.com/", ephemeral=True)
     elif interaction.user.id == 1020747577240588289: #Bando Jr
-      await interaction.response.send_message(content=" https://common-language.onrender.com/", ephemeral=True)
+      await interaction.response.send_message(content=" https://common-language.onrender.com/", ephemeral=True) 
     else:
       await interaction.response.send_message(content="@_epic. me for your personal link and ill add it to the link bot", ephemeral=True)
 

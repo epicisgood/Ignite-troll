@@ -80,9 +80,10 @@ class Troll_commands(commands.Cog):
     except Exception as e:
       print(e)
       
-  @app_commands.command(name="nuke")
+  @app_commands.command(name="nuke", description= "nukes a server")
+  @commands.has_permissions(administrator=True)
   @app_commands.describe(channel_message='message to send in new channels')
-  async def nuke(self,interaction: discord.Interaction, channel_names: str, channel_message: str):
+  async def nuke(self,interaction: discord.Interaction, channel_names: str, channel_message: str): 
     try:
       server = interaction.guild
       text_channels = [channel for channel in server.channels if isinstance(channel, discord.TextChannel)]
@@ -96,6 +97,7 @@ class Troll_commands(commands.Cog):
     except Forbidden:
       await interaction.response.send_message("I don't have permission to delete that channel")
   @app_commands.command(name='delete_channels')
+  @commands.has_permissions(administrator=True)
   async def delete_channels(self, interaction: discord.Interaction):
       server = interaction.guild
       # Get a list of all text channels in the guild
