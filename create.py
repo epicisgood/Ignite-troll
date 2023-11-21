@@ -5,26 +5,10 @@ from discord import Forbidden
 from discord.ext import commands, bridge
 
 
-class Simple_commands(commands.Cog):
 
-  def __init__(self, client):
-    self.client = client
+  
 
-  @bridge.bridge_command(description="says hello to the user")
-  async def hello(self, ctx):
-    await ctx.reply(content=f"Hello! {ctx.author.mention}!")
-
-  @bridge.bridge_command(description='Pong!')
-  async def ping(self, ctx):
-    try:
-      # Assuming you are using discord.Client
-      latency = round(self.client.latency * 1000, 2)
-      await ctx.reply(content=f"Pong! Responded in {latency}ms!")
-    except Exception as e:
-      print(e)
-
-
-class Troll_commands(commands.Cog):
+class Create_commands(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -91,41 +75,5 @@ class Troll_commands(commands.Cog):
     except Exception as e:
       print(e)
 
-  @bridge.bridge_command(description="nukes a server ",
-                         channel_message="message to send in new channe",
-                         administrator=True)
-  async def nuke(self, ctx, channel_names: str, channel_message: str):
-    try:
-      server = ctx.guild
-      text_channels = [
-          channel for channel in server.channels
-          if isinstance(channel, discord.TextChannel)
-      ]
-      for channel in text_channels:
-        await channel.delete()
-      for i in range(25):
-        new_channel = await server.create_text_channel(channel_names)
-        for j in range(20):
-          await new_channel.send(channel_message)
-          await asyncio.sleep(0.5)
-    except Forbidden:
-      await ctx.send(content="I don't have permission to delete that channel",
-                     ephemeral=True)
-
-  @bridge.bridge_command(aliases=["del all", "del_all", "del-all","delete_channels"],description="Deletes all textchannels in the server",
-                         administrator=True)
-  async def delete_all(self, ctx):
-    server = ctx.guild
-    # Get a list of all text channels in the guild
-    text_channels = [
-        channel for channel in server.channels
-        if isinstance(channel, discord.TextChannel)
-    ]
-    for channel in text_channels:
-      await channel.delete()
-    await server.create_text_channel("general")
-
-
 def setup(client):
-  client.add_cog(Simple_commands(client))
-  client.add_cog(Troll_commands(client))
+  client.add_cog(Create_commands(client))
